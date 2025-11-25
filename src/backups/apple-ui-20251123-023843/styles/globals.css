@@ -1,0 +1,11 @@
+@import "tailwindcss";
+@import './premium-ux.css';
+
+html {
+  scroll-behavior: smooth;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}

@@ -1,0 +1,225 @@
+// Mock Report Service
+// Simulates backend API calls for report generation
+
+const reportService = {
+  // Generate comprehensive health report via mock API
+  generateReport: async (reportData = null) => {
+    try {
+      console.log('Calling mock API: /api/report/generate');
+
+      // Simulate API request
+      const response = await this.mockApiCall('/api/report/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          reportData: reportData || await this.getDefaultReportData(),
+          format: 'pdf',
+          includeSections: [
+            'patientInfo',
+            'symptoms',
+            'predictions',
+            'anomalies',
+            'trends',
+            'recommendations',
+            'summary'
+          ]
+        })
+      });
+
+      if (!response.success) {
+        throw new Error(response.message || 'Failed to generate report');
+      }
+
+      return response.data;
+    } catch (error) {
+      console.error('Error generating report:', error);
+      throw error;
+    }
+  },
+
+  // Mock API call simulation
+  mockApiCall: async (endpoint, options = {}) => {
+    // Simulate network delay
+    await new Promise(resolve => setTimeout(resolve, 2000));
+
+    // Mock success response
+    const mockResponse = {
+      success: true,
+      data: {
+        reportId: 'report_' + Date.now(),
+        filename: 'health-report-' + new Date().toISOString().split('T')[0] + '.pdf',
+        generatedAt: new Date().toISOString(),
+        size: Math.floor(Math.random() * 2048) + 1024, // Random size 1-3MB
+        downloadUrl: '/mock-reports/' + Date.now() + '.pdf',
+        content: await this.getDetailedReportContent(options.body ? JSON.parse(options.body).reportData : null)
+      },
+      message: 'Report generated successfully'
+    };
+
+    return mockResponse;
+  },
+
+  // Get default report data if none provided
+  getDefaultReportData: async () => {
+    return {
+      patientId: 'user_12345',
+      period: {
+        start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+        end: new Date().toISOString()
+      },
+      symptoms: [
+        { name: 'Mild headache', severity: 'Mild', frequency: '2-3 times/week', duration: '2-4 hours' },
+        { name: 'Fatigue', severity: 'Moderate', frequency: 'Daily', duration: 'Ongoing' }
+      ],
+      predictions: {
+        cardiovascularRisk: { value: 15, trend: 'Decreasing', confidence: 85 },
+        diabetesRisk: { value: 22, trend: 'Stable', confidence: 78 },
+        mentalHealthScore: { value: 78, trend: 'Improving', confidence: 92 }
+      },
+      anomalies: [
+        { type: 'Irregular sleep pattern', severity: 'Low', detectedAt: new Date().toISOString(), metric: 'Sleep duration' }
+      ],
+      trends: {
+        heartRate: { current: 72, average: 75, change: -3 },
+        sleepQuality: { current: 7.8, average: 7.5, change: 0.3 },
+        activityLevel: { current: 8500, average: 8000, change: 500 }
+      },
+      recommendations: [
+        { message: 'Increase daily water intake to 8 glasses', priority: 'Medium', category: 'Hydration' },
+        { message: 'Consider adding 15 minutes of meditation daily', priority: 'High', category: 'Mental Health' },
+        { message: 'Schedule cardiovascular checkup within next month', priority: 'High', category: 'Preventive Care' }
+      ],
+      overallHealthScore: 78,
+      lastSync: new Date().toISOString()
+    };
+  },
+
+  // Generate detailed report content
+  getDetailedReportContent: async (customData = null) => {
+    const data = customData || await this.getDefaultReportData();
+
+    return {
+      metadata: {
+        reportId: 'HLTH_' + Date.now(),
+        generatedAt: new Date().toISOString(),
+        version: '1.0.2',
+        format: 'PDF',
+        pages: 8,
+        author: 'HealthMate AI'
+      },
+      patientInfo: {
+        name: 'John Doe',
+        id: data.patientId,
+        age: 35,
+        gender: 'Male',
+        reportPeriod: data.period
+      },
+      executiveSummary: {
+        overallScore: data.overallHealthScore,
+        riskLevel: this.calculateRiskLevel(data.overallHealthScore),
+        keyFindings: [
+          'Stable cardiovascular indicators',
+          'Good mental health trend',
+          'Room for improvement in activity levels'
+        ],
+        nextSteps: [
+          'Continue current health routines',
+          'Monitor blood pressure regularly',
+          'Increase physical activity gradually'
+        ]
+      },
+      detailedAnalysis: {
+        symptoms: data.symptoms,
+        predictions: data.predictions,
+        anomalies: data.anomalies,
+        trends: data.trends,
+        recommendations: data.recommendations
+      },
+      charts: {
+        healthScoreTrend: [], // Would contain chart data
+        riskDistribution: [], // Would contain chart data
+        symptomFrequency: []  // Would contain chart data
+      },
+      disclaimers: [
+        'This report is generated by AI and should not replace professional medical advice',
+        'Always consult with healthcare providers for medical decisions',
+        'Data accuracy depends on input quality and device reliability'
+      ]
+    };
+  },
+
+  // Calculate risk level based on health score
+  calculateRiskLevel: (score) => {
+    if (score >= 90) return 'Low';
+    if (score >= 75) return 'Moderate';
+    if (score >= 60) return 'Medium';
+    return 'High';
+  },
+
+  // Download report via API
+  downloadReport: async (reportId) => {
+    try {
+      console.log(`Calling mock API: /api/reports/${reportId}/download`);
+
+      const response = await this.mockApiCall(`/api/reports/${reportId}/download`);
+
+      // In a real app, this would return the actual PDF blob
+      // For now, we'll use the PDF generator utility
+      const { default: pdfGenerator } = await import('../utils/pdfReportGenerator.js');
+
+      return await pdfGenerator.generateHealthReport(response.data.content);
+    } catch (error) {
+      console.error('Error downloading report:', error);
+      throw error;
+    }
+  },
+
+  // List user reports
+  listReports: async (userId = 'user_12345') => {
+    try {
+      console.log(`Calling mock API: /api/reports/user/${userId}`);
+
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      const mockReports = [
+        {
+          id: 'report_001',
+          title: 'Comprehensive Health Assessment - Q4 2025',
+          generatedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+          size: '2.3 MB',
+          status: 'completed',
+          type: 'comprehensive'
+        },
+        {
+          id: 'report_002',
+          title: 'Mental Health Focus Report',
+          generatedAt: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(),
+          size: '1.8 MB',
+          status: 'completed',
+          type: 'specialized'
+        },
+        {
+          id: 'report_003',
+          title: 'Cardiovascular Risk Analysis',
+          generatedAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+          size: '2.1 MB',
+          status: 'completed',
+          type: 'risk_analysis'
+        }
+      ];
+
+      return {
+        success: true,
+        data: mockReports,
+        total: mockReports.length
+      };
+    } catch (error) {
+      console.error('Error listing reports:', error);
+      throw error;
+    }
+  }
+};
+
+export default reportService;
